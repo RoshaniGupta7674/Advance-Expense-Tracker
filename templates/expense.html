@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Expenses List</h2>
+
+<a href="/expense/add/" class="btn">Add Expense</a>
+
+<table class="expense-table">
+
+<tr>
+<th>Amount</th>
+<th>Category</th>
+<th>Note</th>
+<th>Date</th>
+<th>Action</th>
+</tr>
+
+{% for e in expenses %}
+
+<tr>
+
+<td>₹ {{ e.amount }}</td>
+
+<td>{{ e.category }}</td>
+
+<td>{{ e.description }}</td>
+
+<td>{{ e.date }}</td>
+
+<td>
+    <a href="{% url 'edit_expense' e.id %}" class="btn btn-warning">Edit</a>
+    <a href="{% url 'delete_expense' e.id %}" class="btn btn-danger">Delete</a>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endblock %}

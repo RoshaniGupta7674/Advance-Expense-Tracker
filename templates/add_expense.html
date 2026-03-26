@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .mic-btn { width: 80px; height: 80px; border-radius: 50%; font-size: 35px; background: #ff4d4d; color: white; border: none; cursor: pointer; transition: 0.3s; display: block; margin: 20px auto; }
+    .mic-btn.listening { background: #28a745; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); } 100% { transform: scale(1); } }
+    #statusText { text-align: center; font-weight: bold; margin-top: 10px; color: #555; }
+</style>
+
+<div class="container text-center">
+    <h2>Voice Assistant</h2>
+    <button id="micBtn" onclick="toggleListening()" class="mic-btn">🎤</button>
+    <p id="statusText">Tap to Speak</p>
+</div>
+
+<script>
+let recognition;
+let isListening = false;
+let isProcessing = false; // Add this lock at the top of your script
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    recognition = new (window.webkitSpeechRecognition || window.speechRecognition)();
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        isListening = true;
+        document.getElementById('micBtn').classList.add('listening');
+        document.getElementById('statusText').innerText = "Listening... speak now";
+    };
+
+    recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        document.getElementById('statusText').innerText = `Processing: "${text}"`;
+        sendToServer(text);
+    };
+
+    recognition.onerror = (err) => {
+        console.error(err);
+        stopUI();
+    };
+
+    recognition.onend = () => stopUI();
+}
+
+function toggleListening() {
+    if (isListening) { recognition.stop(); } 
+    else { recognition.start(); }
+}
+
+function stopUI() {
+    isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('statusText').innerText = "Tap to Speak";
+}
+
+
+
+function sendToServer(text) {
+    if (isProcessing) return; // 🛑 STOP if already sending
+    isProcessing = true; 
+
+    document.getElementById('statusText').innerText = "Processing...";
+
+    fetch("{% url 'voice_expense' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ text: text })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            window.location.reload();
+        } else {
+            alert("Error: " + data.message);
+            isProcessing = false; // Unlock on error so you can try again
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        isProcessing = false;
+    });
+}
+
+</script>
+
+<form method="post">
+
+{% csrf_token %}
+
+{{ form.errors }}
+
+<label>Amount: </label>
+{{ form.amount }}
+<br><br>
+<label>Category: </label>
+{{ form.category }}
+<br><br>
+<a href="{% url 'add_category' %}" class="btn btn-sm btn-primary">
+    + Add Category
+</a>
+<br><br>
+<label>Description: </label>
+{{ form.description }}
+<br><br>
+<button type="submit" class="btn">Save Expense</button>
+
+</form>
+
+{% endblock %}

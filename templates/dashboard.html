@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="dashboard-header">
+
+<h1>Dashboard</h1>
+
+<p>Track your income and expenses intelligently</p>
+
+</div>
+
+
+<div class="cards">
+
+<div class="card income-card">
+
+<h3>Total Income</h3>
+
+<p class="amount">₹ {{ total_income }}</p>
+
+</div>
+
+
+<div class="card expense-card">
+
+<h3>Total Expense</h3>
+
+<p class="amount">₹ {{ total_expense }}</p>
+
+</div>
+
+
+<div class="card balance-card">
+
+<h3>Balance</h3>
+
+<!-- <p>Balance: {{balance}}</p> -->
+<p class="amount">₹ {{ balance }}</p>
+
+</div>
+
+</div>
+
+
+<div class="chart-container">
+
+<h2>Expense Overview</h2>
+
+<canvas id="expenseChart"></canvas>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/charts.js' %}"></script>
+
+{% endblock %}

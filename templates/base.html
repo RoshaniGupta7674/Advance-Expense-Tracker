@@ -1,0 +1,43 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Expense AI System</title>
+
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+</head>
+
+<body>
+<div class="sidebar">
+
+<h2>ExpenseAI</h2>
+
+<a href="/">Dashboard</a>
+<a href="/expense/">Expenses</a>
+<a href="/expense/add/">Add Expense</a>
+<a href="/income/">Income</a>
+<a href="/income/add/">Add Income</a>
+<a href="/reports/">Reports</a>
+
+
+{% if user.is_authenticated %}
+<a href="/logout/">Logout</a>
+{% else %}
+<a href="/login/">Login</a>
+<a href="/register/">Register</a>
+{% endif %}
+
+</div>
+
+
+<div class="main-content">
+
+{% block content %}
+{% endblock %}
+
+</div>
+
+</body>
+</html>
