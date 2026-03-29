@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+    <div>
+        <h1 style="color: var(--accent-orange);"><i class="fas fa-file-invoice-dollar"></i> Recurring Bills</h1>
+        <p style="color: var(--text-muted);">Never miss a subscription or rent payment</p>
+    </div>
+    <a href="{% url 'add_bill' %}" class="btn" style="background: linear-gradient(45deg, var(--accent-orange), var(--accent-yellow)); font-weight: bold; border:none; box-shadow: 0 4px 10px rgba(230,126,34,0.4);"><i class="fas fa-plus"></i> Add New Bill</a>
+</div>
+
+<div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+    {% for bill in bills %}
+    <div class="feature-card" style="background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-left: 5px solid {% if bill.is_paid %}var(--success){% else %}var(--danger){% endif %}; position: relative;">
+        
+        <a href="{% url 'delete_bill' bill.id %}" onclick="return confirm('Delete this bill reminder?')" style="position: absolute; top: 15px; right: 15px; color: var(--danger); text-decoration: none;">
+            <i class="fas fa-trash"></i>
+        </a>
+        
+        <h3 style="color: var(--text-light); margin-bottom: 5px; font-size: 1.4rem;">{{ bill.title }}</h3>
+        <h4 style="color: var(--accent-orange); margin-bottom: 15px; font-size: 1.2rem;">₹{{ bill.amount }}</h4>
+        
+        <div style="display:flex; align-items: center; margin-bottom: 15px;">
+            <i class="far fa-calendar-alt text-muted" style="margin-right: 8px;"></i>
+            <span style="color: var(--text-muted); font-size: 0.95rem;">Due: <strong>{{ bill.due_date|date:"M d, Y" }}</strong></span>
+        </div>
+        
+        <form action="{% url 'toggle_bill' bill.id %}" method="post" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="width: 100%; border:none; padding: 10px; border-radius: 6px; font-weight: bold; background: {% if bill.is_paid %}var(--card-bg){% else %}linear-gradient(45deg, var(--success), var(--accent-green)){% endif %}; color: {% if bill.is_paid %}var(--text-muted){% else %}#fff{% endif %}; border: 1px solid {% if bill.is_paid %}var(--border-color){% else %}transparent{% endif %};">
+                {% if bill.is_paid %}
+                    <i class="fas fa-undo"></i> Mark Unpaid
+                {% else %}
+                    <i class="fas fa-check"></i> Mark as Paid
+                {% endif %}
+            </button>
+        </form>
+
+    </div>
+    {% empty %}
+    <div style="text-align:left; padding: 20px; color: var(--text-muted); grid-column: 1 / -1;">
+        <i class="fas fa-receipt fa-2x" style="margin-bottom:15px; opacity:0.3;"></i>
+        <p>No recurring bills or subscriptions scheduled. Add one to keep track!</p>
+    </div>
+    {% endfor %}
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

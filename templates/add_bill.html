@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 25px; display:flex; justify-content:space-between; align-items:center;">
+    <div>
+        <h1><i class="fas fa-file-invoice-dollar"></i> Add Bill Reminder</h1>
+        <p>Schedule a new subscription or recurring expense</p>
+    </div>
+</div>
+
+<div class="auth-container" style="width: 100%; max-width: 500px; padding: 35px; background: var(--card-bg); border-top: 5px solid var(--accent-orange); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin: 0 auto;">
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+            <div style="color:var(--danger); font-size:12px; margin-bottom:15px;">{{ form.errors }}</div>
+        {% endif %}
+
+        <div style="margin-bottom: 15px;">
+            <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px;">Bill Title (e.g., Netflix, Rent)</label>
+            {{ form.title }}
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+             <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px;">Amount</label>
+            {{ form.amount }}
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+             <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px;">Due Date</label>
+            {{ form.due_date }}
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+             <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:flex; align-items: center; cursor:pointer;">
+                 {{ form.is_paid }}
+                 <span style="margin-left: 10px;">Already paid for this period?</span>
+             </label>
+        </div>
+
+        <button type="submit" class="btn" style="width:100%; background: linear-gradient(45deg, var(--accent-orange), var(--accent-yellow)); font-size: 16px; font-weight: bold; border-radius: 8px; padding: 12px; box-shadow: 0 4px 15px rgba(230,126,34,0.3); border:none;"><i class="fas fa-save"></i> Save Reminder</button>
+    </form>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+        <h1><i class="fas fa-piggy-bank"></i> My Savings</h1>
+        <p>Monitor your past savings</p>
+    </div>
+    
+    <a href="/saving/add/" class="btn" style="background: linear-gradient(45deg, var(--accent-orange), var(--accent-yellow)); font-weight: bold; border:none; box-shadow: 0 4px 10px rgba(255,107,107,0.4);"><i class="fas fa-plus"></i> Add New Saving</a>
+</div>
+
+<div class="chart-container" style="margin-top:20px;">
+    <h2>Recent Savings</h2>
+    
+    {% if savings %}
+    <table class="expense-table" style="border-radius:10px; overflow:hidden;">
+        <thead>
+            <tr style="background: var(--card-bg);">
+                <th style="text-align:left;">Date</th>
+                <th style="text-align:left;">Source/Goal</th>
+                <th style="text-align:left;">Note</th>
+                <th style="text-align:right;">Amount</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in savings %}
+            <tr>
+                <td style="color:var(--text-muted)">{{ s.date|date:"M d, Y" }}</td>
+                <td style="font-weight:600; color:var(--text-light)">{{ s.source }}</td>
+                <td style="color:var(--text-muted)">{{ s.note }}</td>
+                <td style="text-align:right; font-weight:bold; color:var(--accent-orange);">₹ {{ s.amount }}</td>
+                <td style="text-align:center;">
+                    <a href="{% url 'edit_saving' s.id %}" style="color:var(--accent-teal); text-decoration:none; margin-right:15px;" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="{% url 'delete_saving' s.id %}" style="color:var(--danger); text-decoration:none;" title="Delete" onclick="return confirm('Delete this saving?')"><i class="fas fa-trash"></i></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+        <i class="fas fa-piggy-bank fa-3x" style="margin-bottom:15px; opacity:0.3;"></i>
+        <p>You have no savings recorded yet.</p>
+        <a href="{% url 'add_saving' %}" style="color:var(--accent-orange); text-decoration:none; font-weight:bold;">Start Saving Today</a>
+    </div>
+    {% endif %}
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="info-container" style="padding: 40px; background: var(--card-bg); border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-top: 4px solid var(--accent-teal);">
+    <h1 style="color: var(--accent-teal); margin-bottom: 20px;"><i class="fas fa-book"></i> User Guide</h1>
+    
+    <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px;">
+        Follow these steps to maximize your productivity using Spendora.
+    </p>
+
+    <div class="guide-step" style="margin-bottom: 30px;">
+        <h3 style="color: var(--text-light);"><span style="color: var(--accent-teal); font-weight: bold;">1.</span> Dashboard Limits & Alerts</h3>
+        <p style="color: var(--text-muted); padding-left: 20px;">Your dashboard automatically checks if your expenditures bypass 80% of your earnings. Keep an eye out for warning banners at the top of your screen.</p>
+    </div>
+
+    <div class="guide-step" style="margin-bottom: 30px;">
+        <h3 style="color: var(--text-light);"><span style="color: var(--accent-orange); font-weight: bold;">2.</span> Voice Inputs</h3>
+        <p style="color: var(--text-muted); padding-left: 20px;">Use the voice commands in the Add Expense, Income, or Saving pages. Click the recording mic, tap to speak, and let Gemini interpret the item and price directly. Be as descriptive as you like!</p>
+    </div>
+
+    <div class="guide-step" style="margin-bottom: 30px;">
+        <h3 style="color: var(--text-light);"><span style="color: var(--accent-green); font-weight: bold;">3.</span> Bill Scanner Integration</h3>
+        <p style="color: var(--text-muted); padding-left: 20px;">Snap pictures of your physical receipts or upload screenshots. The AI breaks down total billing amounts alongside the correct shop names, auto-filling your expenditure form instantly.</p>
+    </div>
+
+    <div class="guide-step" style="margin-bottom: 30px;">
+        <h3 style="color: var(--text-light);"><span style="color: var(--accent-blue); font-weight: bold;">4.</span> Analytical Reports</h3>
+        <p style="color: var(--text-muted); padding-left: 20px;">Visit <a href="{% url 'reports' %}" style="color: var(--accent-blue);">Reports</a> to view graphical representations of your tracking data, trend lines, and CSV exports for external use.</p>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

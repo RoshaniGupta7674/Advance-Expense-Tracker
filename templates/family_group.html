@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="info-container" style="padding: 40px; background: var(--card-bg); border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-top: 4px solid var(--accent-orange);">
+    <h1 style="color: var(--accent-orange); margin-bottom: 20px;"><i class="fas fa-users"></i> How Family Group Works</h1>
+    
+    <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6;">
+        The Family Group feature allows you and your family members to combine financial insights, providing a complete picture of your household wealth.
+    </p>
+
+    <h2 style="color: var(--text-light); margin-top: 30px; margin-bottom: 15px;">Features included:</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; color: var(--text-muted);">
+        <div style="background: rgba(255,107,107,0.1); padding: 20px; border-radius: 8px;">
+            <h3 style="color: var(--accent-orange); margin-bottom: 10px;">Aggregated Dashboard</h3>
+            <p>Switch your dashboard view to "Family" to instantly sum up the incomes, expenses, and savings of all grouped accounts.</p>
+        </div>
+        <div style="background: rgba(32,201,151,0.1); padding: 20px; border-radius: 8px;">
+            <h3 style="color: var(--accent-teal); margin-bottom: 10px;">Private Records</h3>
+            <p>Though totals are combined, individual transactions remain tied to user accounts, ensuring personal privacy.</p>
+        </div>
+        <div style="background: rgba(13,110,253,0.1); padding: 20px; border-radius: 8px;">
+            <h3 style="color: var(--accent-blue); margin-bottom: 10px;">Budget Cooperation</h3>
+            <p>Work against shared limits. Receive notifications when the joint spending nears 80% of aggregate monthly income.</p>
+        </div>
+        <div style="background: rgba(255,193,7,0.1); padding: 20px; border-radius: 8px;">
+            <h3 style="color: var(--warning); margin-bottom: 10px;">Easy Setup</h3>
+            <p>A family admin can invite members through their email ID. Once accepted, they instantly fall under the umbrella group.</p>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

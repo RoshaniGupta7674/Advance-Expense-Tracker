@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="dashboard-header" style="margin-bottom: 25px;">
+    <h1><i class="fas fa-edit"></i> Edit Savings</h1>
+    <p>Update your saved amount</p>
+</div>
+
+<div class="auth-container" style="width: 400px; padding: 35px; background: var(--card-bg); border-top: 5px solid var(--accent-orange); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px;">Source / Goal Name</label>
+            {{ form.source }}
+            {% if form.source.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.source.errors.0 }}</div>{% endif %}
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+             <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px;">Amount</label>
+            {{ form.amount }}
+             {% if form.amount.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.amount.errors.0 }}</div>{% endif %}
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+             <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px;">Date</label>
+            {{ form.date }}
+             {% if form.date.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.date.errors.0 }}</div>{% endif %}
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+             <label style="color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px;">Note (Optional)</label>
+            {{ form.note }}
+             {% if form.note.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.note.errors.0 }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn" style="width:100%; background: linear-gradient(45deg, var(--accent-orange), var(--accent-yellow)); font-size: 16px; font-weight: bold; border-radius: 8px; padding: 12px; box-shadow: 0 4px 15px rgba(255,107,107,0.3);"><i class="fas fa-save"></i> Apply Changes</button>
+    </form>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

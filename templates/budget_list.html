@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+    <div>
+        <h1 style="color: var(--accent-blue);"><i class="fas fa-chart-pie"></i> Monthly Budgets</h1>
+        <p style="color: var(--text-muted);">Track your categorical spending limits</p>
+    </div>
+    <a href="/budgets/add/" class="btn" style="background: linear-gradient(45deg, var(--accent-blue), var(--accent-teal)); font-weight: bold; border:none; box-shadow: 0 4px 10px rgba(52,152,219,0.4);"><i class="fas fa-plus"></i> Set New Budget</a>
+</div>
+
+<div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+    {% for budget in budgets %}
+    <div class="feature-card" style="background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-top: 4px solid {% if budget.is_over_limit %}var(--danger){% else %}var(--accent-blue){% endif %}; position: relative;">
+        
+        <a href="{% url 'delete_budget' budget.id %}" onclick="return confirm('Delete this budget?')" style="position: absolute; top: 15px; right: 15px; color: var(--danger); text-decoration: none;">
+            <i class="fas fa-trash"></i>
+        </a>
+        
+        <h3 style="color: var(--text-light); margin-bottom: 15px;">{{ budget.category.name }}</h3>
+        
+        <div style="display:flex; justify-content: space-between; margin-bottom: 5px;">
+            <span style="color: var(--text-muted); font-size: 0.9rem;">Spent: ₹{{ budget.spent }}</span>
+            <span style="color: var(--text-muted); font-size: 0.9rem;">Limit: ₹{{ budget.limit }}</span>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; margin-bottom: 10px;">
+            <div style="height: 100%; width: {{ budget.percentage }}%; background: {% if budget.is_over_limit %}linear-gradient(90deg, #ff4d4d, #ff0000){% else %}linear-gradient(90deg, #3498db, #2ecc71){% endif %}; transition: width 0.5s;"></div>
+        </div>
+        
+        <div style="text-align: right; font-size: 0.85rem; font-weight: bold; color: {% if budget.is_over_limit %}var(--danger){% else %}var(--success){% endif %};">
+            {{ budget.percentage }}% Used
+        </div>
+        
+        {% if budget.is_over_limit %}
+        <p style="color: var(--danger); font-size: 0.85rem; margin-top: 10px; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> You have exceeded your limit!</p>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div style="text-align:left; padding: 20px; color: var(--text-muted); grid-column: 1 / -1;">
+        <i class="fas fa-chart-pie fa-2x" style="margin-bottom:15px; opacity:0.3;"></i>
+        <p>No budgets configured for this month yet. Configure one to track spending.</p>
+    </div>
+    {% endfor %}
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

@@ -2,41 +2,52 @@
 
 {% block content %}
 
-<h2>Expenses List</h2>
+<div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+    <div>
+        <h1 style="color: var(--danger);"><i class="fas fa-money-bill-wave"></i> My Expenses</h1>
+        <p style="color: var(--text-muted);">Track your recent spending</p>
+    </div>
+    
+    <a href="/expense/add/" class="btn" style="background: linear-gradient(45deg, var(--danger), #ff8787); font-weight: bold; border:none; box-shadow: 0 4px 10px rgba(250,82,82,0.4);"><i class="fas fa-plus"></i> Add New Expense</a>
+</div>
 
-<a href="/expense/add/" class="btn">Add Expense</a>
-
-<table class="expense-table">
-
-<tr>
-<th>Amount</th>
-<th>Category</th>
-<th>Note</th>
-<th>Date</th>
-<th>Action</th>
-</tr>
-
-{% for e in expenses %}
-
-<tr>
-
-<td>₹ {{ e.amount }}</td>
-
-<td>{{ e.category }}</td>
-
-<td>{{ e.description }}</td>
-
-<td>{{ e.date }}</td>
-
-<td>
-    <a href="{% url 'edit_expense' e.id %}" class="btn btn-warning">Edit</a>
-    <a href="{% url 'delete_expense' e.id %}" class="btn btn-danger">Delete</a>
-</td>
-
-</tr>
-
-{% endfor %}
-
-</table>
+<div class="chart-container" style="margin-top:20px;">
+    <h2 style="color: var(--text-light); margin-bottom: 15px;">Recent Expenses</h2>
+    
+    {% if expenses %}
+    <table class="expense-table" style="border-radius:10px; overflow:hidden;">
+        <thead>
+            <tr style="background: var(--card-bg);">
+                <th style="text-align:left;">Date</th>
+                <th style="text-align:left;">Category</th>
+                <th style="text-align:left;">Note</th>
+                <th style="text-align:right;">Amount</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in expenses %}
+            <tr>
+                <td style="color:var(--text-muted)">{{ e.date|date:"M d, Y" }}</td>
+                <td style="font-weight:600; color:var(--text-light)">{{ e.category }}</td>
+                <td style="color:var(--text-muted)">{{ e.description }}</td>
+                <td style="text-align:right; font-weight:bold; color:var(--danger);">₹ {{ e.amount }}</td>
+                <td style="text-align:center;">
+                    <a href="{% url 'edit_expense' e.id %}" style="color:var(--accent-teal); text-decoration:none; margin-right:15px;" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="{% url 'delete_expense' e.id %}" style="color:var(--danger); text-decoration:none;" title="Delete" onclick="return confirm('Delete this expense?')"><i class="fas fa-trash"></i></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+        <i class="fas fa-receipt fa-3x" style="margin-bottom:15px; opacity:0.3;"></i>
+        <p>You have no expenses recorded yet.</p>
+        <a href="{% url 'add_expense' %}" style="color:var(--danger); text-decoration:none; font-weight:bold;">Log an Expense Today</a>
+    </div>
+    {% endif %}
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 {% endblock %}

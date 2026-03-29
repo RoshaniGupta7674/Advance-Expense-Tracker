@@ -1,16 +1,143 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .mic-btn { width: 70px; height: 70px; border-radius: 50%; font-size: 30px; background: linear-gradient(135deg, var(--success), var(--accent-green)); color: white; border: none; cursor: pointer; transition: 0.3s; display: block; margin: 10px auto; box-shadow: 0 4px 15px rgba(32,201,151,0.4); }
+    .mic-btn:hover { transform: scale(1.05); }
+    .mic-btn.listening { background: var(--accent-orange); animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(255, 107, 107, 0); } 100% { transform: scale(1); } }
+    #statusText { text-align: center; font-weight: bold; margin-top: 5px; color: var(--text-muted); font-size: 0.9rem; }
+    .form-group { margin-bottom: 15px; }
+    .form-label { color:var(--text-muted); font-size: 14px; font-weight:600; display:block; margin-bottom:5px; }
+</style>
 
-<h2>Add Income</h2>
+<div class="dashboard-header" style="margin-bottom: 25px; display:flex; justify-content:space-between; align-items:center;">
+    <div>
+        <h1><i class="fas fa-hand-holding-usd"></i> Log New Income</h1>
+        <p>Record your earnings details</p>
+    </div>
+</div>
 
-<form method="POST">
-{% csrf_token %}
+<div style="display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-start;">
 
-{{form.as_p}}
+    <!-- Form Section -->
+    <div class="auth-container" style="flex: 1; min-width: 300px; padding: 35px; background: var(--card-bg); border-top: 5px solid var(--success); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        
+        <h2 style="margin-bottom:20px; text-align:center; color: var(--text-light);">Income Entry</h2>
 
-<button type="submit">Save Income</button>
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div style="color:var(--danger); font-size:12px; margin-bottom:15px;">{{ form.errors }}</div>
+            {% endif %}
 
-</form>
+            <div class="form-group">
+                <label class="form-label">Source</label>
+                {{ form.source }}
+            </div>
+            
+            <div class="form-group">
+                 <label class="form-label">Amount</label>
+                {{ form.amount }}
+            </div>
+            
+            <div class="form-group">
+                 <label class="form-label">Date</label>
+                {{ form.date }}
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 25px;">
+                 <label class="form-label">Note (Optional)</label>
+                {{ form.note }}
+            </div>
 
+            <button type="submit" class="btn" style="width:100%; background: linear-gradient(45deg, var(--success), var(--accent-green)); font-size: 16px; font-weight: bold; border-radius: 8px; padding: 12px; box-shadow: 0 4px 15px rgba(32,201,151,0.3); border:none;"><i class="fas fa-save"></i> Save Income</button>
+        </form>
+    </div>
+
+    <!-- AI Voice Section -->
+    <div class="auth-container" style="flex: 1; min-width: 300px; padding: 35px; background: var(--card-bg); border-top: 5px solid var(--accent-teal); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;">
+        <h2 style="color: var(--text-light); margin-bottom: 15px;"><i class="fas fa-robot text-teal"></i> Voice AI</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Tap the microphone and say something like:<br><em>"I received 5000 from freelance work"</em></p>
+        
+        <button id="micBtn" onclick="toggleListening()" class="mic-btn"><i class="fas fa-microphone"></i></button>
+        <p id="statusText">Tap to Speak</p>
+    </div>
+
+</div>
+
+<script>
+let recognition;
+let isProcessing = false;
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+        document.getElementById('micBtn').classList.add('listening');
+        document.getElementById('statusText').innerText = "Listening...";
+    };
+
+    recognition.onresult = (event) => {
+        let liveText = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            liveText += event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                sendToServer(liveText.trim());
+            }
+        }
+        document.getElementById('statusText').innerText = liveText;
+    };
+
+    recognition.onend = () => {
+        document.getElementById('micBtn').classList.remove('listening');
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Mic Error:", event.error);
+        isProcessing = false;
+    };
+}
+
+function toggleListening() {
+    if (isProcessing) return;
+    recognition.start();
+}
+
+function sendToServer(text) {
+    if (isProcessing || !text) return;
+    isProcessing = true;
+    
+    document.getElementById('statusText').innerText = "Processing: " + text;
+
+    fetch("{% url 'voice_income' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ text: text })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            document.getElementById('statusText').innerText = data.message;
+            setTimeout(() => { window.location.reload(); }, 1500); 
+        } else {
+            alert(data.message);
+            isProcessing = false;
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        isProcessing = false;
+    });
+}
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 {% endblock %}

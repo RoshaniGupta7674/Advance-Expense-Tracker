@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 <style>
-    .mic-btn { width: 70px; height: 70px; border-radius: 50%; font-size: 30px; background: linear-gradient(135deg, var(--danger), #ff8787); color: white; border: none; cursor: pointer; transition: 0.3s; display: block; margin: 10px auto; box-shadow: 0 4px 15px rgba(250,82,82,0.4); }
+    .mic-btn { width: 70px; height: 70px; border-radius: 50%; font-size: 30px; background: linear-gradient(135deg, var(--accent-orange), var(--accent-yellow)); color: white; border: none; cursor: pointer; transition: 0.3s; display: block; margin: 10px auto; box-shadow: 0 4px 15px rgba(255,107,107,0.4); }
     .mic-btn:hover { transform: scale(1.05); }
     .mic-btn.listening { background: var(--success); animation: pulse 1.2s infinite; }
     @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); } 100% { transform: scale(1); } }
@@ -13,54 +14,53 @@
 
 <div class="dashboard-header" style="margin-bottom: 25px; display:flex; justify-content:space-between; align-items:center;">
     <div>
-        <h1><i class="fas fa-money-bill-wave"></i> Log New Expense</h1>
-        <p>Record your spending details</p>
+        <h1><i class="fas fa-piggy-bank"></i> Log New Savings</h1>
+        <p>Set money aside for your goals</p>
     </div>
 </div>
 
 <div style="display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-start;">
 
     <!-- Form Section -->
-    <div class="auth-container" style="flex: 1; min-width: 300px; padding: 35px; background: var(--card-bg); border-top: 5px solid var(--danger); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div class="auth-container" style="flex: 1; min-width: 300px; padding: 35px; background: var(--card-bg); border-top: 5px solid var(--accent-orange); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         
-        <h2 style="margin-bottom:20px; text-align:center; color: var(--text-light);">Expense Entry</h2>
+        <h2 style="margin-bottom:20px; text-align:center; color: var(--text-light);">Saving Entry</h2>
 
         <form method="post">
             {% csrf_token %}
             
-            {% if form.errors %}
-                <div style="color:var(--danger); font-size:12px; margin-bottom:15px;">{{ form.errors }}</div>
-            {% endif %}
-
             <div class="form-group">
-                <label class="form-label">Amount</label>
+                <label class="form-label">Source / Goal Name</label>
+                {{ form.source }}
+                {% if form.source.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.source.errors.0 }}</div>{% endif %}
+            </div>
+            
+            <div class="form-group">
+                 <label class="form-label">Amount</label>
                 {{ form.amount }}
+                 {% if form.amount.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.amount.errors.0 }}</div>{% endif %}
             </div>
             
             <div class="form-group">
                  <label class="form-label">Date</label>
                 {{ form.date }}
-            </div>
-            
-            <div class="form-group">
-                 <label class="form-label">Category</label>
-                {{ form.category }}
-                <a href="{% url 'add_category' %}" style="display:inline-block; margin-top:5px; font-size: 13px; color: var(--accent-blue); text-decoration:none;"><i class="fas fa-plus"></i> Add Category</a>
+                 {% if form.date.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.date.errors.0 }}</div>{% endif %}
             </div>
             
             <div class="form-group" style="margin-bottom: 25px;">
-                 <label class="form-label">Description (Optional)</label>
-                {{ form.description }}
+                 <label class="form-label">Note (Optional)</label>
+                {{ form.note }}
+                 {% if form.note.errors %}<div style="color:var(--danger); font-size:12px; margin-top:5px;">{{ form.note.errors.0 }}</div>{% endif %}
             </div>
 
-            <button type="submit" class="btn" style="width:100%; background: linear-gradient(45deg, var(--danger), #ff8787); font-size: 16px; font-weight: bold; border-radius: 8px; padding: 12px; box-shadow: 0 4px 15px rgba(250,82,82,0.3); border:none;"><i class="fas fa-save"></i> Save</button>
+            <button type="submit" class="btn" style="width:100%; background: linear-gradient(45deg, var(--accent-orange), var(--accent-yellow)); font-size: 16px; font-weight: bold; border-radius: 8px; padding: 12px; box-shadow: 0 4px 15px rgba(255,107,107,0.3); border:none;"><i class="fas fa-save"></i> Save</button>
         </form>
     </div>
 
     <!-- AI Voice Section -->
     <div class="auth-container" style="flex: 1; min-width: 300px; padding: 35px; background: var(--card-bg); border-top: 5px solid var(--accent-teal); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;">
         <h2 style="color: var(--text-light); margin-bottom: 15px;"><i class="fas fa-robot text-teal"></i> Voice AI</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Tap the microphone and say something like:<br><em>"I just spent 500 rupees on food"</em></p>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Tap the microphone and say something like:<br><em>"I saved 2000 for emergency fund"</em></p>
         
         <button id="micBtn" onclick="toggleListening()" class="mic-btn"><i class="fas fa-microphone"></i></button>
         <p id="statusText">Tap to Speak</p>
@@ -116,7 +116,7 @@ function sendToServer(text) {
     
     document.getElementById('statusText').innerText = "Processing: " + text;
 
-    fetch("{% url 'voice_expense' %}", {
+    fetch("{% url 'voice_saving' %}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

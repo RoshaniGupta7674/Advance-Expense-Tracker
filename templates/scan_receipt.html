@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1><i class="fas fa-camera"></i> Bill & Receipt Scanner</h1>
+    <p>Upload a photo of your bill to automatically extract data.</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; text-align: center; border: 2px dashed #475569; padding: 40px; border-radius: 12px; background: rgba(30,41,59,0.5);">
+    <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #38bdf8; margin-bottom: 20px;"></i>
+    <h3 style="margin-bottom: 10px;">Drag & Drop your receipt here</h3>
+    <p style="color: #94a3b8; margin-bottom: 20px;">or click to browse from your device</p>
+    
+    <input type="file" id="receipt-upload" accept="image/*" style="display: none;">
+    <button class="btn" onclick="document.getElementById('receipt-upload').click()" style="background: linear-gradient(45deg, #38bdf8, #818cf8); border:none; padding:12px 24px; font-weight:bold; cursor:pointer; color:white; border-radius:8px;">
+        Choose Image
+    </button>
+    
+    <img id="image-preview" src="" style="max-width: 100%; margin-top: 20px; border-radius: 8px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+    
+    <div id="loading" style="display: none; margin-top: 20px; color: #38bdf8;">
+        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <p style="margin-top: 10px;">AI is analyzing your bill...</p>
+    </div>
+</div>
+
+<!-- Output Data -->
+<div id="scanned-result" style="display: none; max-width: 600px; margin: 30px auto; background: #1e293b; padding: 25px; border-radius: 12px; border-left: 6px solid #22c55e;">
+    <h3><i class="fas fa-check-circle" style="color:#22c55e;"></i> Extraction Successful!</h3>
+    <ul style="list-style:none; padding:0; margin-top:20px; line-height: 2;">
+        <li><strong>Amount:</strong> ₹<span id="res-amount"></span></li>
+        <li><strong>Category:</strong> <span id="res-category"></span></li>
+        <li><strong>Description:</strong> <span id="res-desc"></span></li>
+        <li><strong>Date:</strong> <span id="res-date"></span></li>
+    </ul>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script>
+    document.getElementById('receipt-upload').addEventListener('change', async function(e){
+        const file = e.target.files[0];
+        if(!file) return;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e){
+            const img = document.getElementById('image-preview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+        
+        // Loading
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('scanned-result').style.display = 'none';
+        
+        // Upload
+        const formData = new FormData();
+        formData.append('receipt', file);
+        
+        try {
+            const res = await fetch('/scan-receipt/', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            document.getElementById('loading').style.display = 'none';
+            if(data.status === 'success'){
+                document.getElementById('res-amount').innerText = data.data.amount;
+                document.getElementById('res-category').innerText = data.data.category;
+                document.getElementById('res-desc').innerText = data.data.description;
+                document.getElementById('res-date').innerText = data.data.date;
+                document.getElementById('scanned-result').style.display = 'block';
+                
+                // Speak confirmation
+                if('speechSynthesis' in window){
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Successfully added ${data.data.amount} to ${data.data.category} category.`));
+                }
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch(err) {
+            console.error(err);
+            document.getElementById('loading').style.display = 'none';
+            alert('An error occurred during upload.');
+        }
+    });
+</script>
+{% endblock %}

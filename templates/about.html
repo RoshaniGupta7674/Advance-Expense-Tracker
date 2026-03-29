@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="info-container" style="padding: 40px; background: var(--card-bg); border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <h1 style="color: var(--accent-blue); margin-bottom: 20px;"><i class="fas fa-info-circle"></i> About Spendora</h1>
+    <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6;">
+        Spendora is a state-of-the-art financial management system built to simplify your daily tracking. We strive to provide premium experiences using intelligent automation.
+    </p>
+
+    <h2 style="color: var(--text-light); margin-top: 30px; margin-bottom: 15px;">Key Features</h2>
+    <ul style="color: var(--text-muted); padding-left: 20px; line-height: 1.8;">
+        <li>AI receipt scanning and parsing</li>
+        <li>Intelligent categorization with voice commands</li>
+        <li>Granular control over expenses, income, and goals</li>
+        <li>Limit alerts and robust budget planning</li>
+        <li>Family Group capabilities for shared tracking</li>
+    </ul>
+
+    <h2 style="color: var(--text-light); margin-top: 30px; margin-bottom: 15px;">Contact</h2>
+    <p style="color: var(--text-muted);">Have questions or feedback? Contact us at <strong>support@expenseai.com</strong>.</p>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}

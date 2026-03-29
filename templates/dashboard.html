@@ -3,56 +3,157 @@
 
 {% block content %}
 
-<div class="dashboard-header">
-
-<h1>Dashboard</h1>
-
-<p>Track your income and expenses intelligently</p>
-
+<div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+        <h1 style="background: linear-gradient(45deg, #38bdf8, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;">Spendora Dashboard</h1>
+        <p style="color: var(--text-muted); font-size: 1.1em; font-weight: 500;">Empowering your financial future.</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button id="daily-summary-btn" class="btn" style="margin:0; background: linear-gradient(45deg, #10b981, #059669); border:none; cursor:pointer; font-weight:bold; box-shadow:0 4px 10px rgba(16,185,129,0.4);">
+            <i class="fas fa-calendar-day"></i> Daily Summary
+        </button>
+    </div>
 </div>
-
 
 <div class="cards">
+    <div class="card income-card">
+        <h3>Total Income</h3>
+        <p class="amount">₹ {{ total_income }}</p>
+    </div>
+    <div class="card expense-card">
+        <h3>Total Expense</h3>
+        <p class="amount">₹ {{ total_expense }}</p>
+    </div>
+    <div class="card saving-card">
+        <h3>Total Savings</h3>
+        <p class="amount">₹ {{ total_saving }}</p>
+    </div>
+    <div class="card balance-card">
+        <h3>Balance</h3>
+        <p class="amount">₹ {{ balance }}</p>
+    </div>
+</div>
 
-<div class="card income-card">
-
-<h3>Total Income</h3>
-
-<p class="amount">₹ {{ total_income }}</p>
-
+<div class="dashboard-grid" style="margin-top:25px;">
+    <div class="recent-transactions">
+        <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+        {% if recent_transactions %}
+        <table class="expense-table" style="border-radius:10px; overflow:hidden;">
+            <thead>
+                <tr style="background: var(--card-bg);">
+                    <th style="padding: 12px; text-align: left;">Date</th>
+                    <th style="padding: 12px; text-align: left;">Type</th>
+                    <th style="padding: 12px; text-align: left;">Title</th>
+                    <th style="padding: 12px; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in recent_transactions %}
+                <tr>
+                    <td style="padding: 12px; color:var(--text-muted);">{{ tx.date|date:"M d, Y" }}</td>
+                    <td style="padding: 12px;">
+                        {% if tx.type_label == 'Income' %}<span style="color:var(--success);"><i class="fas fa-arrow-down"></i> Income</span>
+                        {% elif tx.type_label == 'Expense' %}<span style="color:var(--danger);"><i class="fas fa-arrow-up"></i> Expense</span>
+                        {% else %}<span style="color:var(--accent-orange);"><i class="fas fa-piggy-bank"></i> Saving</span>{% endif %}
+                    </td>
+                    <td style="padding: 12px; font-weight:600; color:var(--text-light);">{{ tx.display_title }}</td>
+                    <td style="padding: 12px; text-align:right; font-weight:bold;">₹ {{ tx.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-muted);">No records found.</p>
+        {% endif %}
+    </div>
 </div>
 
 
-<div class="card expense-card">
-
-<h3>Total Expense</h3>
-
-<p class="amount">₹ {{ total_expense }}</p>
-
+<!-- Output for voice and summary -->
+<div id="ai-response" style="margin-top: 20px; padding: 15px; background: rgba(99,102,241,0.1); border-left: 4px solid #6366f1; border-radius: 8px; display: none;">
+    <p style="margin:0; font-weight:bold; color:#e0e7ff;" id="ai-response-text"></p>
 </div>
 
+<!-- FontAwesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-<div class="card balance-card">
+<script>
+    // Speech Synthesis Helper
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
 
-<h3>Balance</h3>
+    function showResponse(text) {
+        const div = document.getElementById('ai-response');
+        const p = document.getElementById('ai-response-text');
+        p.innerText = text;
+        div.style.display = 'block';
+        speak(text);
+    }
 
-<!-- <p>Balance: {{balance}}</p> -->
-<p class="amount">₹ {{ balance }}</p>
+    // Daily Summary
+    document.getElementById('daily-summary-btn').addEventListener('click', async () => {
+        try {
+            const res = await fetch('/daily-summary/');
+            const data = await res.json();
+            if (data.status === 'success') {
+                showResponse(data.message);
+            }
+        } catch(e) { console.error(e); }
+    });
 
-</div>
+    // Voice Query
+    document.getElementById('voice-query-btn').addEventListener('click', () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Your browser does not support Voice Recognition.');
+            return;
+        }
 
-</div>
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        
+        let originalText = document.getElementById('voice-query-btn').innerHTML;
+        document.getElementById('voice-query-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Listening...';
 
+        recognition.onresult = async (event) => {
+            const text = event.results[0][0].transcript;
+            
+            document.getElementById('voice-query-btn').innerHTML = '<i class="fas fa-brain fa-pulse"></i> Thinking...';
+            
+            try {
+                const response = await fetch('/voice-query/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const data = await response.json();
+                document.getElementById('voice-query-btn').innerHTML = originalText;
+                
+                if (data.status === 'success') {
+                    showResponse(data.message);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('voice-query-btn').innerHTML = originalText;
+            }
+        };
 
-<div class="chart-container">
+        recognition.onerror = (e) => {
+            console.error(e);
+            document.getElementById('voice-query-btn').innerHTML = originalText;
+        };
 
-<h2>Expense Overview</h2>
-
-<canvas id="expenseChart"></canvas>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{% static 'js/charts.js' %}"></script>
+        recognition.start();
+    });
+</script>
 
 {% endblock %}

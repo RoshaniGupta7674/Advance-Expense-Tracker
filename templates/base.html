@@ -3,36 +3,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Expense AI System</title>
+<title>Spendora: AI-Powered Budget Intelligence</title>
 
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* Animated Warning Alert */
+.alert-warning {
+    background: linear-gradient(45deg, #ff4d4d, #ff8787);
+    color: white;
+    font-weight: bold;
+    border: 2px solid #ff0000;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+    animation: flashAlert 1.5s infinite;
+}
+@keyframes flashAlert {
+    0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
+    50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(255, 77, 77, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
+}
+</style>
 </head>
 
 <body>
-<div class="sidebar">
+<div class="sidebar" style="overflow-y: auto; padding-bottom: 80px;">
 
-<h2>ExpenseAI</h2>
+<h2>Spendora</h2>
 
-<a href="/">Dashboard</a>
-<a href="/expense/">Expenses</a>
-<a href="/expense/add/">Add Expense</a>
-<a href="/income/">Income</a>
-<a href="/income/add/">Add Income</a>
-<a href="/reports/">Reports</a>
-
+<a href="/"><i class="fas fa-home"></i> Dashboard</a>
+<a href="/expense/"><i class="fas fa-money-bill-wave"></i> Expenses</a>
+<a href="/expense/add/"><i class="fas fa-plus-circle"></i> Add Expense</a>
+<a href="/income/"><i class="fas fa-wallet"></i> Income</a>
+<a href="/income/add/"><i class="fas fa-hand-holding-usd"></i> Add Income</a>
+<a href="/saving/"><i class="fas fa-piggy-bank"></i> Savings</a>
+<a href="/saving/add/"><i class="fas fa-coins"></i> Add Saving</a>
+<a href="/reports/"><i class="fas fa-chart-line"></i> Reports</a>
+<a href="/scan-receipt-page/" style="color: var(--accent-blue);"><i class="fas fa-camera"></i> Bill Scanner</a>
+<a href="/budgets/"><i class="fas fa-chart-pie"></i> Monthly Budgets</a>
+<a href="/bills/"><i class="fas fa-file-invoice-dollar"></i> Recurring Bills</a>
+<br>
+<a href="{% url 'about' %}" style="color: var(--text-muted);"><i class="fas fa-info-circle"></i> About</a>
+<a href="{% url 'user_guide' %}" style="color: var(--text-muted);"><i class="fas fa-book"></i> User Guide</a>
+<br>
 
 {% if user.is_authenticated %}
-<a href="/logout/">Logout</a>
+<a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
 {% else %}
-<a href="/login/">Login</a>
-<a href="/register/">Register</a>
+<a href="/login/"><i class="fas fa-sign-in-alt"></i> Login</a>
+<a href="/register/"><i class="fas fa-user-plus"></i> Register</a>
 {% endif %}
 
 </div>
 
 
 <div class="main-content">
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
 {% block content %}
 {% endblock %}
