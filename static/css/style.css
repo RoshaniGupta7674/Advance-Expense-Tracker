@@ -279,13 +279,32 @@ background:var(--bg-main);
 
 width:220px;
 height:100vh;
+box-sizing: border-box;
 
 background:var(--sidebar-bg);
 
 position:fixed;
 
 padding:20px;
+display: flex;
+flex-direction: column;
+overflow-y: auto;
 
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: var(--accent-orange);
+    border-radius: 10px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent-yellow);
 }
 
 .sidebar h2{

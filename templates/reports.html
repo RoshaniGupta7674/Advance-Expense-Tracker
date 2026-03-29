@@ -10,7 +10,9 @@
         <p>Visual analytics and recent transaction history</p>
     </div>
     <div>
-        <a href="/export-csv/" class="btn" style="background: linear-gradient(45deg, #f59e0b, #d97706); border:none; color:white; font-weight:bold; box-shadow:0 4px 10px rgba(245,158,11,0.4);"><i class="fas fa-file-csv"></i> Export CSV</a>
+        <a href="/export-csv/" class="btn"
+            style="background: linear-gradient(45deg, #f59e0b, #d97706); border:none; color:white; font-weight:bold; box-shadow:0 4px 10px rgba(245,158,11,0.4);"><i
+                class="fas fa-file-csv"></i> Export CSV</a>
     </div>
 
     <div class="slicer-bar" style="color: antiquewhite;">
@@ -25,15 +27,18 @@
 </div>
 
 <div class="kpi-grid">
-    <div class="card income-card" style="box-shadow: 0 10px 25px rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2);">
+    <div class="card income-card"
+        style="box-shadow: 0 10px 25px rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2);">
         <h3>Filtered Income</h3>
         <p class="amount">₹ {{ total_income }}</p>
     </div>
-    <div class="card expense-card" style="box-shadow: 0 10px 25px rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.2);">
+    <div class="card expense-card"
+        style="box-shadow: 0 10px 25px rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.2);">
         <h3>Filtered Expense</h3>
         <p class="amount">₹ {{ total_expense }}</p>
     </div>
-    <div class="card balance-card" style="box-shadow: 0 10px 25px rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.2);">
+    <div class="card balance-card"
+        style="box-shadow: 0 10px 25px rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.2);">
         <h3>Predicted Next Month <i class="fas fa-magic" style="color: #38bdf8; font-size:16px;"></i></h3>
         <p class="amount" style="color:#e0e7ff;">₹ {{ predicted_next_month }}</p>
         <p style="font-size:12px; color:#94a3b8; margin-top:5px;">Based on 90-day avg + 5%</p>
@@ -105,6 +110,7 @@
     // Expense Doughnut Chart
     const expenseCtx = document.getElementById('expenseChart').getContext('2d');
     new Chart(expenseCtx, {
+
         type: 'doughnut',
         data: {
             labels: JSON.parse('{{ expense_labels|escapejs }}'),

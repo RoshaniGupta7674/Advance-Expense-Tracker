@@ -81,9 +81,12 @@
     // Speech Synthesis Helper
     function speak(text) {
         if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.cancel(); // clear previous
+            let utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 1.0;
             utterance.pitch = 1.1;
+            utterance.lang = 'en-US';
+            window.speechSynthesisUtterance = utterance; // prevent GC
             window.speechSynthesis.speak(utterance);
         }
     }

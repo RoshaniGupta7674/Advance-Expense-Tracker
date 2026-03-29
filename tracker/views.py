@@ -66,6 +66,16 @@ def dashboard(request):
     all_recent = all_recent[:5]
 
     check_expense_limit(request.user, request)
+    
+    today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
+    
+    upcoming_bills = BillReminder.objects.filter(user=request.user, is_paid=False, due_date__lte=tomorrow)
+    for bill in upcoming_bills:
+        if bill.due_date == tomorrow:
+            messages.warning(request, f"Reminder: Your bill '{bill.title}' for ₹{bill.amount} is due tomorrow!")
+        elif bill.due_date <= today:
+            messages.error(request, f"Alert: Your bill '{bill.title}' for ₹{bill.amount} is overdue!")
 
     context = {
         "total_income": total_income,
@@ -115,10 +125,15 @@ def reports(request):
     income_labels = [i['source'] for i in incomes_by_src]
     income_values = [float(i['total']) for i in incomes_by_src]
 
-    # Expense Prediction: Average of last 90 days * 1.05
-    past_90_days = today - timedelta(days=90)
-    past_90_expenses = Expense.objects.filter(user=request.user, date__gte=past_90_days).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-    predicted_next_month = round((past_90_expenses / Decimal('3.0')) * Decimal('1.05'), 2)
+    # Expense Prediction: Better averaging
+    first_expense = Expense.objects.filter(user=request.user).order_by('date').first()
+    if first_expense:
+        days_active = (today - first_expense.date).days or 1
+        total_all_time = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        daily_avg = total_all_time / Decimal(str(days_active))
+        predicted_next_month = round(daily_avg * Decimal('30.0') * Decimal('1.05'), 2)
+    else:
+        predicted_next_month = Decimal('0.00')
 
     # Chart Data: Expense Trend (Line Chart by Date)
     trend_data = expense_qs.values('date').annotate(total=Sum('amount')).order_by('date')
@@ -291,6 +306,15 @@ def add_expense(request):
         form = ExpenseForm(request.POST, user=request.user)
         if form.is_valid():
             expense = form.save(commit=False)
+            
+            # --- Check if expense exceeds income ---
+            income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            
+            if expense_total + expense.amount > income_total:
+                messages.error(request, "Error: Adding this expense would exceed your total income. Transaction denied.")
+                return render(request, 'add_expense.html', {'form': form})
+                
             expense.user = request.user
             expense.save()
             check_expense_limit(request.user, request)
@@ -334,7 +358,16 @@ def edit_expense(request, id):
     if request.method == "POST":
         form = ExpenseForm(request.POST, instance=expense, user=request.user)
         if form.is_valid():
-            form.save()
+            updated_expense = form.save(commit=False)
+            
+            income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            expense_total = Expense.objects.filter(user=request.user).exclude(id=updated_expense.id).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            
+            if expense_total + updated_expense.amount > income_total:
+                messages.error(request, "Error: Updating this expense would exceed your total income. Transaction denied.")
+                return render(request, 'edit_expense.html', {'form': form})
+                
+            updated_expense.save()
             return redirect('expense_list')   # or your correct URL name
     else:
         form = ExpenseForm(instance=expense, user=request.user)
@@ -508,7 +541,7 @@ def voice_expense(request):
             extracted_amt = 0
             
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('models/gemini-2.5-flash')
                 # Strict prompt to force category detection
                 prompt = f"""
                 Analyze: "{user_text}"
@@ -559,6 +592,12 @@ def voice_expense(request):
             if extracted_amt > 0:
                 cat_name = extracted_cat.strip().title()
                 
+                income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                
+                if float(expense_total) + float(extracted_amt) > float(income_total):
+                    return JsonResponse({"status": "error", "message": "Error: Expense exceeds total income. Transaction denied."})
+                
                 # Use iexact to find "Food" even if stored as "food"
                 category = Category.objects.filter(name__iexact=cat_name, user=request.user).first()
                 
@@ -591,7 +630,7 @@ def voice_income(request):
             extracted_amt = 0
             
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('models/gemini-2.5-flash')
                 # Strict prompt to force source detection
                 prompt = f"""
                 Analyze: "{user_text}"
@@ -672,7 +711,7 @@ def voice_query(request):
             
             context_data += " Category breakdown: " + ", ".join([f"{k}: {v}" for k, v in cat_totals.items()])
                 
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash-002')
             prompt = f"""
             You are a helpful AI financial assistant. Provide a brief, natural language answer to the user query.
             User Query: "{user_text}"
@@ -734,7 +773,7 @@ def scan_receipt(request):
             Return ONLY a valid JSON format like: {"amount": float, "category": "String", "description": "Shop Name - Items"}
             """
             
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('models/gemini-2.5-flash')
             response = model.generate_content([prompt, img])
             
             # extract JSON
@@ -757,6 +796,12 @@ def scan_receipt(request):
                 category = Category.objects.filter(name__iexact=cat_name, user=request.user).first()
                 if not category:
                     category = Category.objects.create(name=cat_name, user=request.user)
+                    
+                income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                
+                if float(expense_total) + float(amount) > float(income_total):
+                    return JsonResponse({"status": "error", "message": "Error: Scanned expense exceeds total income. Transaction denied."})
 
                 exp = Expense.objects.create(
                     user=request.user,
@@ -884,7 +929,7 @@ def voice_saving(request):
             extracted_amt = 0
             
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('models/gemini-2.5-flash')
                 prompt = f"""
                 Analyze: "{user_text}"
                 1. Identify the 'amount' as an integer.
@@ -991,7 +1036,17 @@ def add_bill(request):
 @login_required
 def toggle_bill(request, id):
     bill = get_object_or_404(BillReminder, id=id, user=request.user)
-    bill.is_paid = not bill.is_paid
+    
+    if not bill.is_paid:
+        bill.is_paid = True
+        if bill.is_recurring:
+            import calendar
+            days_in_month = calendar.monthrange(bill.due_date.year, bill.due_date.month)[1]
+            bill.due_date = bill.due_date + timedelta(days=days_in_month)
+            bill.is_paid = False
+    else:
+        bill.is_paid = False
+        
     bill.save()
     return redirect('bills_list')
 
