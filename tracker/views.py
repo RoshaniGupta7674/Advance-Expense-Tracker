@@ -35,8 +35,33 @@ def check_expense_limit(user, request):
             messages.warning(request, f"🚨 Alert: You have spent {percentage}% of your monthly {budget.category.name} budget.")
 
 
+import calendar
+
+def process_recurring_bills(user):
+    today = timezone.now().date()
+    recurring_bills = BillReminder.objects.filter(user=user, is_recurring=True, due_date__lte=today)
+    
+    if recurring_bills.exists():
+        cat, _ = Category.objects.get_or_create(user=user, name="Bills")
+        
+        for bill in recurring_bills:
+            while bill.due_date <= today:
+                Expense.objects.create(
+                    user=user,
+                    amount=bill.amount or Decimal('0.00'),
+                    category=cat,
+                    description=f"Auto-generated: {bill.title}",
+                    date=bill.due_date
+                )
+                days_in_month = calendar.monthrange(bill.due_date.year, bill.due_date.month)[1]
+                bill.due_date = bill.due_date + timedelta(days=days_in_month)
+            bill.is_paid = False
+            bill.save()
+
 @login_required
 def dashboard(request):
+    process_recurring_bills(request.user)
+
     income_data = Income.objects.filter(user=request.user).aggregate(Sum('amount'))
     expense_data = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))
     saving_data = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))
@@ -70,6 +95,10 @@ def dashboard(request):
     today = timezone.now().date()
     tomorrow = today + timedelta(days=1)
     
+    days_in_month = calendar.monthrange(today.year, today.month)[1]
+    this_month_end = today.replace(day=days_in_month)
+    this_month_bills = BillReminder.objects.filter(user=request.user, due_date__gte=today.replace(day=1), due_date__lte=this_month_end).order_by('due_date')
+    
     upcoming_bills = BillReminder.objects.filter(user=request.user, is_paid=False, due_date__lte=tomorrow)
     for bill in upcoming_bills:
         if bill.due_date == tomorrow:
@@ -82,6 +111,7 @@ def dashboard(request):
         "total_expense": total_expense,
         "total_saving": total_saving,
         "balance": balance,
+        "this_month_bills": this_month_bills,
         
         "recent_transactions": all_recent,
     }
@@ -307,12 +337,14 @@ def add_expense(request):
         if form.is_valid():
             expense = form.save(commit=False)
             
-            # --- Check if expense exceeds income ---
+            # --- Check if expense exceeds available balance ---
             income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
             expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            saving_total = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
             
-            if expense_total + expense.amount > income_total:
-                messages.error(request, "Error: Adding this expense would exceed your total income. Transaction denied.")
+            balance = income_total - expense_total - saving_total
+            if expense.amount > balance:
+                messages.error(request, "Error: Adding this expense would exceed your available balance. Transaction denied.")
                 return render(request, 'add_expense.html', {'form': form})
                 
             expense.user = request.user
@@ -362,9 +394,11 @@ def edit_expense(request, id):
             
             income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
             expense_total = Expense.objects.filter(user=request.user).exclude(id=updated_expense.id).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            saving_total = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
             
-            if expense_total + updated_expense.amount > income_total:
-                messages.error(request, "Error: Updating this expense would exceed your total income. Transaction denied.")
+            balance = income_total - expense_total - saving_total
+            if updated_expense.amount > balance:
+                messages.error(request, "Error: Updating this expense would exceed your available balance. Transaction denied.")
                 return render(request, 'edit_expense.html', {'form': form})
                 
             updated_expense.save()
@@ -594,9 +628,11 @@ def voice_expense(request):
                 
                 income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
                 expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                saving_total = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
                 
-                if float(expense_total) + float(extracted_amt) > float(income_total):
-                    return JsonResponse({"status": "error", "message": "Error: Expense exceeds total income. Transaction denied."})
+                balance = float(income_total) - float(expense_total) - float(saving_total)
+                if float(extracted_amt) > balance:
+                    return JsonResponse({"status": "error", "message": "Error: Expense exceeds available balance. Transaction denied."})
                 
                 # Use iexact to find "Food" even if stored as "food"
                 category = Category.objects.filter(name__iexact=cat_name, user=request.user).first()
@@ -799,9 +835,11 @@ def scan_receipt(request):
                     
                 income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
                 expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                saving_total = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
                 
-                if float(expense_total) + float(amount) > float(income_total):
-                    return JsonResponse({"status": "error", "message": "Error: Scanned expense exceeds total income. Transaction denied."})
+                balance = float(income_total) - float(expense_total) - float(saving_total)
+                if float(amount) > balance:
+                    return JsonResponse({"status": "error", "message": "Error: Scanned expense exceeds available balance. Transaction denied."})
 
                 exp = Expense.objects.create(
                     user=request.user,
@@ -892,6 +930,16 @@ def add_saving(request):
         form = SavingForm(request.POST)
         if form.is_valid():
             saving = form.save(commit=False)
+            
+            income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            saving_total = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            
+            balance = income_total - expense_total - saving_total
+            if saving.amount > balance:
+                messages.error(request, "Error: Adding this saving would exceed your available balance. Transaction denied.")
+                return render(request, 'add_saving.html', {'form': form})
+                
             saving.user = request.user
             saving.save()
             messages.success(request, "Saving added successfully.")
@@ -906,7 +954,18 @@ def edit_saving(request, id):
     if request.method == "POST":
         form = SavingForm(request.POST, instance=saving)
         if form.is_valid():
-            form.save()
+            updated_saving = form.save(commit=False)
+            
+            income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            saving_total = Saving.objects.filter(user=request.user).exclude(id=updated_saving.id).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            
+            balance = income_total - expense_total - saving_total
+            if updated_saving.amount > balance:
+                messages.error(request, "Error: Updating this saving would exceed your available balance. Transaction denied.")
+                return render(request, 'edit_saving.html', {'form': form})
+                
+            updated_saving.save()
             return redirect("saving_list")
     else:
         form = SavingForm(instance=saving)
@@ -951,6 +1010,14 @@ def voice_saving(request):
 
             if extracted_amt > 0:
                 source_name = extracted_source.strip().title()
+                
+                income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                saving_total = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                
+                balance = float(income_total) - float(expense_total) - float(saving_total)
+                if float(extracted_amt) > balance:
+                    return JsonResponse({"status": "error", "message": "Error: Saving exceeds available balance. Transaction denied."})
                 
                 Saving.objects.create(
                     user=request.user,
@@ -1018,7 +1085,8 @@ def delete_budget(request, id):
 @login_required
 def bills_list(request):
     bills = BillReminder.objects.filter(user=request.user).order_by('due_date')
-    return render(request, 'bills.html', {'bills': bills})
+    past_payments = Expense.objects.filter(user=request.user, category__name__iexact="Bills").order_by('-date')
+    return render(request, 'bills.html', {'bills': bills, 'past_payments': past_payments})
 
 @login_required
 def add_bill(request):
@@ -1038,6 +1106,26 @@ def toggle_bill(request, id):
     bill = get_object_or_404(BillReminder, id=id, user=request.user)
     
     if not bill.is_paid:
+        # Check balance constraint before marking paid
+        income_total = Income.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        expense_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        saving_total = Saving.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        balance = income_total - expense_total - saving_total
+        
+        if bill.amount and bill.amount > balance:
+            messages.error(request, "Error: Paying this bill would exceed your available balance.")
+            return redirect('bills_list')
+            
+        # Record expense
+        cat, _ = Category.objects.get_or_create(user=request.user, name="Bills")
+        Expense.objects.create(
+            user=request.user,
+            amount=bill.amount or Decimal('0.00'),
+            category=cat,
+            description=f"Manual Payment: {bill.title}",
+            date=timezone.now().date()
+        )
+        
         bill.is_paid = True
         if bill.is_recurring:
             import calendar

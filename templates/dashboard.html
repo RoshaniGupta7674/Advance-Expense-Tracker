@@ -66,8 +66,45 @@
         <p style="color: var(--text-muted);">No records found.</p>
         {% endif %}
     </div>
+    
+    <div class="upcoming-bills" style="margin-top: 25px;">
+        <h2><i class="fas fa-calendar-alt"></i> Upcoming Bills This Month</h2>
+        {% if this_month_bills %}
+        <table class="expense-table" style="border-radius:10px; overflow:hidden; width: 100%;">
+            <thead>
+                <tr style="background: var(--card-bg);">
+                    <th style="padding: 12px; text-align: left;">Due Date</th>
+                    <th style="padding: 12px; text-align: left;">Title</th>
+                    <th style="padding: 12px; text-align: left;">Status</th>
+                    <th style="padding: 12px; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bill in this_month_bills %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 12px; color:var(--text-muted);">{{ bill.due_date|date:"M d, Y" }}</td>
+                    <td style="padding: 12px; font-weight:600; color:var(--text-light);">{{ bill.title }}
+                        {% if bill.is_recurring %}
+                        <span style="font-size: 0.8em; color: var(--accent-orange); margin-left:8px;"><i class="fas fa-sync-alt"></i></span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px;">
+                        {% if bill.is_paid %}
+                        <span style="color:var(--success);"><i class="fas fa-check-circle"></i> Paid</span>
+                        {% else %}
+                        <span style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> Pending</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; text-align:right; font-weight:bold;">₹ {{ bill.amount|default:"0.00" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-muted);">No upcoming bills this month.</p>
+        {% endif %}
+    </div>
 </div>
-
 
 <!-- Output for voice and summary -->
 <div id="ai-response" style="margin-top: 20px; padding: 15px; background: rgba(99,102,241,0.1); border-left: 4px solid #6366f1; border-radius: 8px; display: none;">

@@ -44,5 +44,34 @@
     </div>
     {% endfor %}
 </div>
+
+<div class="past-payments-section" style="margin-top: 40px;">
+    <h2 style="color: var(--text-light); margin-bottom: 20px;"><i class="fas fa-history"></i> Past Bill Payments</h2>
+    {% if past_payments %}
+    <table class="expense-table" style="border-radius:10px; overflow:hidden; width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: var(--card-bg);">
+                <th style="padding: 12px; text-align: left; color: var(--text-muted);">Date Paid</th>
+                <th style="padding: 12px; text-align: left; color: var(--text-muted);">Description</th>
+                <th style="padding: 12px; text-align: right; color: var(--text-muted);">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in past_payments %}
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 12px; color:var(--text-muted);">{{ payment.date|date:"M d, Y" }}</td>
+                <td style="padding: 12px; font-weight:600; color:var(--text-light);">{{ payment.description }}</td>
+                <td style="padding: 12px; text-align:right; font-weight:bold; color: var(--text-light);">₹ {{ payment.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="background: var(--card-bg); padding: 20px; border-radius: 8px; text-align: center;">
+        <p style="color: var(--text-muted); margin: 0;">No past bill payments recorded.</p>
+    </div>
+    {% endif %}
+</div>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 {% endblock %}
