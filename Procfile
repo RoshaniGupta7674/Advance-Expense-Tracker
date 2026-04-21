@@ -1,0 +1,1 @@
+web: gunicorn expense_ai_system.wsgi
